@@ -1,0 +1,13 @@
+[tool.ruff]
+line-length = 80
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "Q"]  # Q — это flake8-quotes
+
+per-file-ignores = {"backend/settings.py" = ["ALL"], "*/migrations/*" = ["ALL"]}
+
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "single"
+multiline-quotes = "single"
+docstring-quotes = "double"
