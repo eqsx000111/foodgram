@@ -8,6 +8,7 @@ from django.views.generic import RedirectView
 from django.views.generic.detail import SingleObjectMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -21,6 +22,7 @@ from recipes.models import (
     Subscription
 )
 
+from .permissions import IsAuthorOrAdminOrReadOnly, IsAdminOrReadOnly, IsAdminOrOwner
 from .filters import IngredientsFilter, RecipesFilter
 from .serializers import (
     FoodUserSerializer,
@@ -29,8 +31,10 @@ from .serializers import (
     SubscriptionSerializer,
     IngredientsSerializer,
     RecipeSimpleSerializer,
-    RecipesSerializer,
+    RecipesReadSerializer,
+    RecipesWriteSerializer,
     TagsSerializer,
+    CustomSetPasswordSerializer
 )
 from .services import generate_shopping_list_pdf
 
@@ -38,6 +42,9 @@ User = get_user_model()
 
 
 class FoodUserViewSet(DjoserUserViewSet):
+    permission_classes = [IsAuthenticatedOrReadOnly,]
+    pagination_class = (LimitOffsetPagination)
+
     def get_serializer_class(self):
         if self.action == 'create':
             return CustomUserCreateSerializer
@@ -46,8 +53,12 @@ class FoodUserViewSet(DjoserUserViewSet):
         return FoodUserSerializer
 
     def get_permissions(self):
-        if self.action in ['create', 'list', 'retrieve']:
+        if self.action in ['create', 'retrieve', 'list']:
             permission_classes = [AllowAny]
+        elif self.action in [
+            'avatar', 'subscriptions', 'subscribe', 'set_password'
+        ]:
+            permission_classes = [IsAuthenticated]
         else:
             permission_classes = [IsAuthenticated]
         return [permission() for permission in permission_classes]
@@ -57,9 +68,32 @@ class FoodUserViewSet(DjoserUserViewSet):
 
     @action(
         detail=False,
+        methods=['post'],
+        permission_classes=[IsAdminOrOwner]
+    )
+    def set_password(self, request):
+        serializer = CustomSetPasswordSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {
+                'detail': 'Пароль успешно изменен !'
+            }, status=status.HTTP_204_NO_CONTENT
+        )
+
+    @action(detail=False, methods=['get'], url_path='me', permission_classes=[IsAdminOrOwner])
+    def me(self, request):
+        serializer = FoodUserSerializer(request.user, context={'request': request})
+        return Response(serializer.data)
+
+    @action(
+        detail=False,
         methods=['put', 'delete'],
         url_path='me/avatar',
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAdminOrOwner]
     )
     def avatar(self, request):
         user = request.user
@@ -68,7 +102,9 @@ class FoodUserViewSet(DjoserUserViewSet):
             serializer.is_valid(raise_exception=True)
             user.avatar = serializer.validated_data['avatar']
             user.save()
-            return Response({'avatar': request.build_absolute_uri(user.avatar.url)})
+            return Response(
+                {'avatar': request.build_absolute_uri(user.avatar.url)}
+            )
         elif request.method == 'DELETE':
             if user.avatar:
                 user.avatar.delete()
@@ -89,7 +125,10 @@ class FoodUserViewSet(DjoserUserViewSet):
                     {'errors': 'Нельзя подписаться на самого себя!'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            subscription, _ = Subscription.objects.get_or_create(user=user, author=author)
+            subscription, _ = Subscription.objects.get_or_create(
+                user=user,
+                author=author
+            )
             if not _:
                 return Response(
                     {
@@ -102,7 +141,10 @@ class FoodUserViewSet(DjoserUserViewSet):
             )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        deleted, _ = Subscription.objects.filter(user=user, author=author).delete()
+        deleted, _ = Subscription.objects.filter(
+            user=user,
+            author=author
+        ).delete()
         if not deleted:
             return Response(
                 {'errors': 'Подписка не найдена'},
@@ -113,7 +155,7 @@ class FoodUserViewSet(DjoserUserViewSet):
     @action(
         detail=False,
         methods=['GET'],
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAdminOrOwner]
     )
     def subscriptions(self, request):
         queryset = Subscription.objects.filter(user=request.user)
@@ -128,13 +170,22 @@ class FoodUserViewSet(DjoserUserViewSet):
 
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
-    serializer_class = RecipesSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrAdminOrReadOnly]
     filter_backends = (DjangoFilterBackend,)
     filterset_class = RecipesFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
 
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        recipe = serializer.save(author=request.user)
+        write_serializer = RecipesWriteSerializer(recipe, context={'request': request})
+        return Response(write_serializer.data, status=status.HTTP_201_CREATED)
+
+    def get_serializer_class(self):
+        if self.action in ['list', 'retrieve']:
+            return RecipesReadSerializer
+        return RecipesWriteSerializer
 
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
@@ -145,12 +196,24 @@ class RecipesViewSet(viewsets.ModelViewSet):
         short_url = request.build_absolute_uri(f'/s/{recipe.short_link}/')
         return Response({'short_url': short_url})
 
-    @action(detail=True, methods=['post', 'delete'], url_path='favorite')
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='favorite',
+        permission_classes=[IsAdminOrOwner],
+        pagination_class=None
+    )
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipes, pk=pk)
+        user = self.request.user
+        if request.method == 'GET':
+            if not user.is_authenticated:
+                return Response({'is_favorited': False})
+            is_favorited = Favorites.objects.filter(user=user, recipe=recipe).exists()
+            return Response({'is_favorited': is_favorited})
         if request.method == 'POST':
             favorite, _ = Favorites.objects.get_or_create(
-                user=self.request.user, recipe=recipe
+                user=user, recipe=recipe
             )
             if not _:
                 return Response(
@@ -160,7 +223,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             serializer = RecipeSimpleSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         delete, _ = Favorites.objects.filter(
-            user=request.user, recipe=recipe
+            user=user, recipe=recipe
         ).delete()
         if not delete:
             return Response(
@@ -169,7 +232,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'], url_path='shopping_cart')
+    @action(
+        detail=True,
+        methods=['post', 'delete'],
+        url_path='shopping_cart',
+        permission_classes=[IsAdminOrOwner]
+    )
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipes, pk=pk)
         if request.method == 'POST':
@@ -193,7 +261,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=False, methods=['get'], url_path='download_shopping_cart')
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='download_shopping_cart',
+        permission_classes=[IsAdminOrOwner]
+    )
     def download_shopping_cart(self, request, pk=None):
         user = request.user
         ingredients = (
@@ -209,16 +282,19 @@ class RecipesViewSet(viewsets.ModelViewSet):
         return generate_shopping_list_pdf(ingredients)
 
 
-class IngredientsViewSet(viewsets.ModelViewSet):
+class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredients.objects.all()
     serializer_class = IngredientsSerializer
+    pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientsFilter
+    search_fields = ('^name')
 
 
-class TagsViewSet(viewsets.ModelViewSet):
+class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Tags.objects.all()
     serializer_class = TagsSerializer
+    pagination_class = None
 
 
 class ShortLinkRedirectView(SingleObjectMixin, RedirectView):
@@ -235,4 +311,3 @@ class ShortLinkRedirectView(SingleObjectMixin, RedirectView):
 
     def get_queryset(self):
         return self.model.objects.filter(short_link=self.kwargs['short_link'])
-    

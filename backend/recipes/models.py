@@ -124,7 +124,7 @@ class Recipes(models.Model):
     )
     name = models.CharField(verbose_name='Название',
                             max_length=RECIPES_MAX_LENGTH)
-    description = models.TextField(verbose_name='Описание')
+    text = models.TextField(verbose_name='Описание')
     ingredients = models.ManyToManyField(
         Ingredients,
         through='IngredientsInRecipes',
