@@ -175,6 +175,19 @@ class RecipesViewSet(viewsets.ModelViewSet):
     filterset_class = RecipesFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
 
+    def list(self, request, *args, **kwargs):
+        user = request.user
+        recipe = request.query_params.get('is_favorited')
+        if recipe:
+            try:
+                recipe = int(recipe)
+            except ValueError:
+                return Response({'error': 'Некорректный id рецепта'}, status=status.HTTP_400_BAD_REQUEST)
+            if not user.is_authenticated:
+                return Response(({'is_favorited': False}))
+            return Response({'is_favorited': Favorites.objects.filter(user=user, recipe=recipe).exists()})
+        return super().list(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
