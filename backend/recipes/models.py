@@ -18,7 +18,7 @@ from .constant import (
     INGREDIENTS_NAME_MAX_LENGTH,
     MEASUREMENT_UNIT_MAX_LENGTH,
     RECIPES_MAX_LENGTH,
-    SHORT_LINK_MAX_LENGTH
+    SHORT_LINK_MAX_LENGTH,
 )
 
 
@@ -64,7 +64,9 @@ class FoodUser(AbstractUser):
 
     objects = FoodUserManager()
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username', ]
+    REQUIRED_FIELDS = [
+        'username',
+    ]
 
     class Meta:
         verbose_name = 'Пользователь'
@@ -121,17 +123,16 @@ class Recipes(models.Model):
         on_delete=models.CASCADE,
         verbose_name='Автор',
     )
-    name = models.CharField(verbose_name='Название',
-                            max_length=RECIPES_MAX_LENGTH)
+    name = models.CharField(
+        verbose_name='Название', max_length=RECIPES_MAX_LENGTH
+    )
     text = models.TextField(verbose_name='Описание')
     ingredients = models.ManyToManyField(
         Ingredients,
         through='IngredientsInRecipes',
         verbose_name='Ингредиенты',
     )
-    tags = models.ManyToManyField(
-        Tags, verbose_name='Теги'
-    )
+    tags = models.ManyToManyField(Tags, verbose_name='Теги')
     image = models.ImageField(
         upload_to='recipes/images/', verbose_name='Картинка'
     )
@@ -143,9 +144,11 @@ class Recipes(models.Model):
         unique=True,
         blank=True,
         null=True,
-        verbose_name='Короткая ссылка'
+        verbose_name='Короткая ссылка',
     )
-    pub_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата публикации рецепта')
+    pub_date = models.DateTimeField(
+        auto_now_add=True, verbose_name='Дата публикации рецепта'
+    )
 
     def save(self, *args, **kwargs):
         if not self.short_link:
@@ -179,9 +182,7 @@ class Recipes(models.Model):
 
 class IngredientsInRecipes(models.Model):
     recipe = models.ForeignKey(
-        Recipes,
-        on_delete=models.CASCADE,
-        related_name='recipe_ingredients'
+        Recipes, on_delete=models.CASCADE, related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
         Ingredients,
@@ -225,13 +226,12 @@ class Subscription(models.Model):
         verbose_name_plural = 'Подписки'
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'author'],
-                name='unique_subscription'
+                fields=['user', 'author'], name='unique_subscription'
             ),
             models.CheckConstraint(
                 check=~models.Q(user=models.F('author')),
-                name='prevent_self_follow'
-            )
+                name='prevent_self_follow',
+            ),
         ]
 
     def __str__(self):
@@ -245,21 +245,18 @@ class Favorites(models.Model):
         verbose_name='Пользователь',
     )
     recipe = models.ForeignKey(
-        Recipes,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт'
+        Recipes, on_delete=models.CASCADE, verbose_name='Рецепт'
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_favorite'
+                fields=['user', 'recipe'], name='unique_favorite'
             ),
         ]
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
-        default_related_name='favorites'
+        default_related_name = 'favorites'
 
     def __str__(self):
         return f'{self.user} -> {self.recipe}'
@@ -275,14 +272,13 @@ class ShoppingCart(models.Model):
         Recipes,
         on_delete=models.CASCADE,
         verbose_name='Рецепт',
-        related_name='shopping_cart'
+        related_name='shopping_cart',
     )
 
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=['user', 'recipe'],
-                name='unique_shopping_cart'
+                fields=['user', 'recipe'], name='unique_shopping_cart'
             ),
         ]
         verbose_name = 'Список покупок'

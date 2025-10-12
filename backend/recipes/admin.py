@@ -6,7 +6,7 @@ from .models import (
     Ingredients,
     FoodUser,
     Tags,
-    IngredientsInRecipes
+    IngredientsInRecipes,
 )
 
 
@@ -18,10 +18,18 @@ class FoodUserAdmin(admin.ModelAdmin):
 
 @admin.register(Subscription)
 class SubscribtionAdmin(admin.ModelAdmin):
-
-    list_display = ('user', 'author',)
-    search_fields = ('user__username', 'author__username',)
-    list_filter = ('user', 'author',)
+    list_display = (
+        'user',
+        'author',
+    )
+    search_fields = (
+        'user__username',
+        'author__username',
+    )
+    list_filter = (
+        'user',
+        'author',
+    )
 
 
 class IngredientsInRecipesInline(admin.TabularInline):
@@ -42,7 +50,13 @@ class IngredientsAdmin(admin.ModelAdmin):
 
 @admin.register(Recipes)
 class RecipesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'cooking_time', 'get_ingredients_count', 'pub_date')
+    list_display = (
+        'name',
+        'author',
+        'cooking_time',
+        'get_ingredients_count',
+        'pub_date',
+    )
     list_filter = ('tags', 'cooking_time', 'author')
     search_fields = ('name', 'text', 'author__username')
     filter_horizontal = ('tags',)
@@ -60,6 +74,7 @@ class RecipesAdmin(admin.ModelAdmin):
 
     def get_ingredients_count(self, obj):
         return obj.recipe_ingredients.count()
+
     get_ingredients_count.short_description = 'Кол-во ингредиентов'
 
 
@@ -76,4 +91,3 @@ class TagsAdmin(admin.ModelAdmin):
     list_display = ('name', 'slug')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
-

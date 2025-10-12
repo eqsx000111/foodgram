@@ -11,7 +11,11 @@ from rest_framework import status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import (
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
+)
 from recipes.models import (
     Favorites,
     Ingredients,
@@ -22,7 +26,7 @@ from recipes.models import (
     Subscription,
 )
 
-from .permissions import IsAuthorOrAdminOrReadOnly, IsAdminOrReadOnly, IsAdminOrOwner
+from .permissions import IsAuthorOrAdminOrReadOnly, IsAdminOrOwner
 from .filters import IngredientsFilter, RecipesFilter
 from .serializers import (
     FoodUserSerializer,
@@ -34,7 +38,7 @@ from .serializers import (
     RecipesReadSerializer,
     RecipesWriteSerializer,
     TagsSerializer,
-    CustomSetPasswordSerializer
+    CustomSetPasswordSerializer,
 )
 from .services import generate_shopping_list_pdf
 
@@ -42,8 +46,10 @@ User = get_user_model()
 
 
 class FoodUserViewSet(DjoserUserViewSet):
-    permission_classes = [IsAuthenticatedOrReadOnly,]
-    pagination_class = (LimitOffsetPagination)
+    permission_classes = [
+        IsAuthenticatedOrReadOnly,
+    ]
+    pagination_class = LimitOffsetPagination
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -56,7 +62,10 @@ class FoodUserViewSet(DjoserUserViewSet):
         if self.action in ['create', 'retrieve', 'list']:
             permission_classes = [AllowAny]
         elif self.action in [
-            'avatar', 'subscriptions', 'subscribe', 'set_password'
+            'avatar',
+            'subscriptions',
+            'subscribe',
+            'set_password',
         ]:
             permission_classes = [IsAuthenticated]
         else:
@@ -73,27 +82,32 @@ class FoodUserViewSet(DjoserUserViewSet):
     )
     def set_password(self, request):
         serializer = CustomSetPasswordSerializer(
-            data=request.data,
-            context={'request': request}
+            data=request.data, context={'request': request}
         )
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(
-            {
-                'detail': 'Пароль успешно изменен !'
-            }, status=status.HTTP_204_NO_CONTENT
+            {'detail': 'Пароль успешно изменен !'},
+            status=status.HTTP_204_NO_CONTENT,
         )
 
-    @action(detail=False, methods=['get'], url_path='me', permission_classes=[IsAdminOrOwner])
+    @action(
+        detail=False,
+        methods=['get'],
+        url_path='me',
+        permission_classes=[IsAdminOrOwner],
+    )
     def me(self, request):
-        serializer = FoodUserSerializer(request.user, context={'request': request})
+        serializer = FoodUserSerializer(
+            request.user, context={'request': request}
+        )
         return Response(serializer.data)
 
     @action(
         detail=False,
         methods=['put', 'delete'],
         url_path='me/avatar',
-        permission_classes=[IsAdminOrOwner]
+        permission_classes=[IsAdminOrOwner],
     )
     def avatar(self, request):
         user = request.user
@@ -114,7 +128,7 @@ class FoodUserViewSet(DjoserUserViewSet):
     @action(
         detail=True,
         methods=['POST', 'DELETE'],
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated],
     )
     def subscribe(self, request, id=None):
         user = request.user
@@ -123,18 +137,15 @@ class FoodUserViewSet(DjoserUserViewSet):
             if user == author:
                 return Response(
                     {'errors': 'Нельзя подписаться на самого себя!'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             subscription, _ = Subscription.objects.get_or_create(
-                user=user,
-                author=author
+                user=user, author=author
             )
             if not _:
                 return Response(
-                    {
-                        'errors': 'Вы уже подписаны на этого автора!'
-                    },
-                    status=status.HTTP_400_BAD_REQUEST
+                    {'errors': 'Вы уже подписаны на этого автора!'},
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             serializer = SubscriptionSerializer(
                 subscription, context={'request': request}
@@ -142,28 +153,21 @@ class FoodUserViewSet(DjoserUserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         deleted, _ = Subscription.objects.filter(
-            user=user,
-            author=author
+            user=user, author=author
         ).delete()
         if not deleted:
             return Response(
                 {'errors': 'Подписка не найдена'},
-                status=status.HTTP_400_BAD_REQUEST
+                status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(
-        detail=False,
-        methods=['GET'],
-        permission_classes=[IsAdminOrOwner]
-    )
+    @action(detail=False, methods=['GET'], permission_classes=[IsAdminOrOwner])
     def subscriptions(self, request):
         queryset = Subscription.objects.filter(user=request.user)
         page = self.paginate_queryset(queryset)
         serializer = SubscriptionSerializer(
-            page,
-            many=True,
-            context={'request': request}
+            page, many=True, context={'request': request}
         )
         return self.get_paginated_response(serializer.data)
 
@@ -182,10 +186,19 @@ class RecipesViewSet(viewsets.ModelViewSet):
             try:
                 recipe_id = int(recipe_is_favorited)
             except ValueError:
-                return Response({'error': 'Некорректный id рецепта'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response(
+                    {'error': 'Некорректный id рецепта'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
             if not user.is_authenticated:
                 return Response(({'is_favorited': False}))
-            return Response({'is_favorited': Favorites.objects.filter(user=user, recipe=recipe_id).exists()})
+            return Response(
+                {
+                    'is_favorited': Favorites.objects.filter(
+                        user=user, recipe=recipe_id
+                    ).exists()
+                }
+            )
         recipe_in_cart = request.query_params.get('is_in_shopping_cart')
         if recipe_in_cart:
             try:
@@ -193,18 +206,26 @@ class RecipesViewSet(viewsets.ModelViewSet):
             except ValueError:
                 return Response(
                     {'error': 'Некорректный id рецепта'},
-                    status=status.HTTP_400_BAD_REQUEST
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
             if not user.is_authenticated:
                 return Response({'is_in_shopping_cart': False})
-            return Response({'is_in_shopping_cart': ShoppingCart.objects.filter(user=user, recipe=recipe_id).exists()})
+            return Response(
+                {
+                    'is_in_shopping_cart': ShoppingCart.objects.filter(
+                        user=user, recipe=recipe_id
+                    ).exists()
+                }
+            )
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         recipe = serializer.save(author=request.user)
-        write_serializer = RecipesWriteSerializer(recipe, context={'request': request})
+        write_serializer = RecipesWriteSerializer(
+            recipe, context={'request': request}
+        )
         return Response(write_serializer.data, status=status.HTTP_201_CREATED)
 
     def get_serializer_class(self):
@@ -226,7 +247,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         methods=['post', 'delete'],
         url_path='favorite',
         permission_classes=[IsAdminOrOwner],
-        pagination_class=None
+        pagination_class=None,
     )
     def favorite(self, request, pk=None):
         recipe = get_object_or_404(Recipes, pk=pk)
@@ -234,7 +255,9 @@ class RecipesViewSet(viewsets.ModelViewSet):
         if request.method == 'GET':
             if not user.is_authenticated:
                 return Response({'is_favorited': False})
-            is_favorited = Favorites.objects.filter(user=user, recipe=recipe).exists()
+            is_favorited = Favorites.objects.filter(
+                user=user, recipe=recipe
+            ).exists()
             return Response({'is_favorited': is_favorited})
         if request.method == 'POST':
             favorite, _ = Favorites.objects.get_or_create(
@@ -247,9 +270,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
                 )
             serializer = RecipeSimpleSerializer(recipe)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        delete, _ = Favorites.objects.filter(
-            user=user, recipe=recipe
-        ).delete()
+        delete, _ = Favorites.objects.filter(user=user, recipe=recipe).delete()
         if not delete:
             return Response(
                 {'errors': 'Не было в избранном'},
@@ -261,7 +282,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post', 'delete'],
         url_path='shopping_cart',
-        permission_classes=[IsAdminOrOwner]
+        permission_classes=[IsAdminOrOwner],
     )
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipes, pk=pk)
@@ -290,7 +311,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         detail=False,
         methods=['get'],
         url_path='download_shopping_cart',
-        permission_classes=[IsAdminOrOwner]
+        permission_classes=[IsAdminOrOwner],
     )
     def download_shopping_cart(self, request, pk=None):
         user = request.user
@@ -313,7 +334,7 @@ class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
     filter_backends = (DjangoFilterBackend,)
     filterset_class = IngredientsFilter
-    search_fields = ('^name')
+    search_fields = '^name'
 
 
 class TagsViewSet(viewsets.ReadOnlyModelViewSet):

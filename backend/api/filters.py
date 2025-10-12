@@ -5,8 +5,7 @@ from recipes.models import Ingredients, Recipes
 
 class IngredientsFilter(django_filters.FilterSet):
     name = django_filters.CharFilter(
-        field_name='name',
-        lookup_expr='istartswith'
+        field_name='name', lookup_expr='istartswith'
     )
 
     class Meta:
