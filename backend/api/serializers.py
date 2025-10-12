@@ -4,8 +4,9 @@ from django.core.files.base import ContentFile
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer
-from djoser.serializers import SetPasswordSerializer as DjoserSetPasswordSerializer
-from rest_framework.validators import ValidationError
+from djoser.serializers import (
+    SetPasswordSerializer as DjoserSetPasswordSerializer
+)
 from rest_framework import serializers
 
 from recipes.constant import USERNAME_MAX_LENGTH
@@ -22,6 +23,8 @@ User = get_user_model()
 
 class Base64ImageField(serializers.ImageField):
     def to_internal_value(self, data):
+        if data == "" or data is None:
+            raise serializers.ValidationError("Поле image не может быть пустым")
         if isinstance(data, str) and data.startswith('data:image'):
             format, imgstr = data.split(';base64,')
             ext = format.split('/')[-1]
@@ -128,7 +131,7 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tags.objects.all(), many=True, required=True
     )
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(required=True, allow_null=False)
 
     class Meta:
         model = Recipes
@@ -217,7 +220,7 @@ class RecipesReadSerializer(serializers.ModelSerializer):
     tags = TagsSerializer(
         read_only=True, many=True
     )
-    image = Base64ImageField(required=False, allow_null=True)
+    image = Base64ImageField(read_only=True)
     is_favorited = serializers.SerializerMethodField()
     is_in_shopping_cart = serializers.SerializerMethodField()
 
