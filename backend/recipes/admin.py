@@ -44,13 +44,13 @@ class IngredientsAdmin(admin.ModelAdmin):
 class RecipesAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'cooking_time', 'get_ingredients_count')
     list_filter = ('tags', 'cooking_time', 'author')
-    search_fields = ('name', 'description', 'author__username')
+    search_fields = ('name', 'text', 'author__username')
     filter_horizontal = ('tags',)
     inlines = [IngredientsInRecipesInline]
     fields = (
         'name',
         'author',
-        'description',
+        'text',
         'image',
         'cooking_time',
         'tags',

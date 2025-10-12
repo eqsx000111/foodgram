@@ -184,7 +184,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
             except ValueError:
                 return Response({'error': 'Некорректный id рецепта'}, status=status.HTTP_400_BAD_REQUEST)
             if not user.is_authenticated:
-                return Response(({'is_favorited': False}))
+                return Response({'error': 'Авторизуйтесь для просмотра избранного!'}, status=status.HTTP_401_UNAUTHORIZED)
             return Response({'is_favorited': Favorites.objects.filter(user=user, recipe=recipe).exists()})
         return super().list(request, *args, **kwargs)
 
