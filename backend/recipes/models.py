@@ -120,7 +120,6 @@ class Recipes(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name='Автор',
-        related_name='recipes',
     )
     name = models.CharField(verbose_name='Название',
                             max_length=RECIPES_MAX_LENGTH)
@@ -131,7 +130,7 @@ class Recipes(models.Model):
         verbose_name='Ингредиенты',
     )
     tags = models.ManyToManyField(
-        Tags, related_name='recipes', verbose_name='Теги'
+        Tags, verbose_name='Теги'
     )
     image = models.ImageField(
         upload_to='recipes/images/', verbose_name='Картинка'
@@ -146,6 +145,7 @@ class Recipes(models.Model):
         null=True,
         verbose_name='Короткая ссылка'
     )
+    pub_date = models.DateTimeField(auto_now_add=True, verbose_name='Дата публикации рецепта')
 
     def save(self, *args, **kwargs):
         if not self.short_link:
@@ -170,7 +170,8 @@ class Recipes(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
-        ordering = ('-name',)
+        default_related_name = 'recipes'
+        ordering = ('-pub_date',)
 
     def __str__(self):
         return self.name
@@ -242,12 +243,10 @@ class Favorites(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
-        related_name='favorites'
     )
     recipe = models.ForeignKey(
         Recipes,
         on_delete=models.CASCADE,
-        related_name='favorites',
         verbose_name='Рецепт'
     )
 
@@ -260,6 +259,7 @@ class Favorites(models.Model):
         ]
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
+        default_related_name='favorites'
 
     def __str__(self):
         return f'{self.user} -> {self.recipe}'

@@ -42,10 +42,11 @@ class IngredientsAdmin(admin.ModelAdmin):
 
 @admin.register(Recipes)
 class RecipesAdmin(admin.ModelAdmin):
-    list_display = ('name', 'author', 'cooking_time', 'get_ingredients_count')
+    list_display = ('name', 'author', 'cooking_time', 'get_ingredients_count', 'pub_date')
     list_filter = ('tags', 'cooking_time', 'author')
     search_fields = ('name', 'text', 'author__username')
     filter_horizontal = ('tags',)
+    ordering = ('-pub_date',)
     inlines = [IngredientsInRecipesInline]
     fields = (
         'name',
@@ -54,6 +55,7 @@ class RecipesAdmin(admin.ModelAdmin):
         'image',
         'cooking_time',
         'tags',
+        'pub_date',
     )
 
     def get_ingredients_count(self, obj):
