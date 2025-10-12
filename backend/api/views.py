@@ -19,7 +19,7 @@ from recipes.models import (
     Recipes,
     ShoppingCart,
     Tags,
-    Subscription
+    Subscription,
 )
 
 from .permissions import IsAuthorOrAdminOrReadOnly, IsAdminOrReadOnly, IsAdminOrOwner
@@ -177,15 +177,27 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         user = request.user
-        recipe = request.query_params.get('is_favorited')
-        if recipe:
+        recipe_is_favorited = request.query_params.get('is_favorited')
+        if recipe_is_favorited:
             try:
-                recipe = int(recipe)
+                recipe_id = int(recipe_is_favorited)
             except ValueError:
                 return Response({'error': 'Некорректный id рецепта'}, status=status.HTTP_400_BAD_REQUEST)
             if not user.is_authenticated:
-                return Response({'error': 'Авторизуйтесь для просмотра избранного!'}, status=status.HTTP_401_UNAUTHORIZED)
-            return Response({'is_favorited': Favorites.objects.filter(user=user, recipe=recipe).exists()})
+                return Response(({'is_favorited': False}))
+            return Response({'is_favorited': Favorites.objects.filter(user=user, recipe=recipe_id).exists()})
+        recipe_in_cart = request.query_params.get('is_in_shopping_cart')
+        if recipe_in_cart:
+            try:
+                recipe_id = int(recipe_in_cart)
+            except ValueError:
+                return Response(
+                    {'error': 'Некорректный id рецепта'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            if not user.is_authenticated:
+                return Response({'is_in_shopping_cart': False})
+            return Response({'is_in_shopping_cart': ShoppingCart.objects.filter(user=user, recipe=recipe_id).exists()})
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
