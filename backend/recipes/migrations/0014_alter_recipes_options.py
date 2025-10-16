@@ -4,9 +4,11 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ("recipes", "0013_alter_favorites_options_alter_recipes_options_and_more"),
+        (
+            "recipes",
+            "0013_alter_favorites_options_alter_recipes_options_and_more",
+        ),
     ]
 
     operations = [

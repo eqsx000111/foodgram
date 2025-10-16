@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("recipes", "0015_alter_recipes_options"),
     ]
@@ -33,6 +32,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="recipes",
             name="tags",
-            field=models.ManyToManyField(to="recipes.tags", verbose_name="Теги"),
+            field=models.ManyToManyField(
+                to="recipes.tags", verbose_name="Теги"
+            ),
         ),
     ]

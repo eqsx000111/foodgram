@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("recipes", "0004_alter_ingredientsinrecipes_ingredient_and_more"),
     ]

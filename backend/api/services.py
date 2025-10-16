@@ -7,8 +7,7 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
-FONT_PATH = os.path.join(settings.BASE_DIR, 'static',
-                         'fonts', 'DejaVuSans.ttf')
+FONT_PATH = os.path.join(settings.BASE_DIR, 'fonts', 'DejaVuSans.ttf')
 
 if os.path.exists(FONT_PATH):
     pdfmetrics.registerFont(TTFont('DejaVuSans', FONT_PATH))
@@ -22,12 +21,14 @@ def generate_shopping_list_pdf(ingredients):
     response['Content-Disposition'] = 'attachment; filename="shopping_list.pdf"'
 
     p = canvas.Canvas(response, pagesize=A4)
-    p.setFont(
-        'DejaVuSans',
-        12
+
+    font_name = (
+        'DejaVuSans'
         if 'DejaVuSans' in pdfmetrics.getRegisteredFontNames()
-        else 'Helvetica',
+        else 'Helvetica'
     )
+    font_size = 12
+    p.setFont(font_name, font_size)
 
     width, height = A4
     y = height - 50
@@ -36,17 +37,13 @@ def generate_shopping_list_pdf(ingredients):
     y -= 30
 
     for item in ingredients:
-        line = f"{item['ingredient__name']} ({item['ingredient__measurement_unit']}) — {item['total_amount']}"
+        line = f"{item['ingredient__name']} "
+        f"({item['ingredient__measurement_unit']}) — {item['total_amount']}"
         p.drawString(60, y, line)
         y -= 18
         if y < 60:
             p.showPage()
-            p.setFont(
-                'DejaVuSans',
-                12
-                if 'DejaVuSans' in pdfmetrics.getRegisteredFontNames()
-                else 'Helvetica',
-            )
+            p.setFont(font_name, font_size)
             y = height - 50
 
     p.showPage()

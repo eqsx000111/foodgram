@@ -1,11 +1,9 @@
-
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("recipes", "0011_rename_description_recipes_text"),
     ]

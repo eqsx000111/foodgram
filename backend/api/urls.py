@@ -6,6 +6,7 @@ from .views import (
     IngredientsViewSet,
     RecipesViewSet,
     TagsViewSet,
+    short_link_redirect,
 )
 
 router = DefaultRouter()
@@ -18,4 +19,10 @@ router.register(r'tags', TagsViewSet, basename='tags')
 urlpatterns = [
     path('', include(router.urls)),
     path('auth/', include('djoser.urls.authtoken')),
+]
+
+short_link_patterns = [
+    path(
+        's/<str:short_link>/', short_link_redirect, name='short-link-redirect'
+    ),
 ]

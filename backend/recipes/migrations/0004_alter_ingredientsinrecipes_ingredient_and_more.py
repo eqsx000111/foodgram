@@ -5,7 +5,6 @@ import django.db.models.deletion
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("recipes", "0003_rename_coocking_time_recipes_cooking_time"),
     ]

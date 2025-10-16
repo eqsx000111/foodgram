@@ -2,10 +2,7 @@ from djoser.views import UserViewSet as DjoserUserViewSet
 
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from django.shortcuts import get_object_or_404
-from django.urls import reverse
-from django.views.generic import RedirectView
-from django.views.generic.detail import SingleObjectMixin
+from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status, viewsets
 from rest_framework.pagination import LimitOffsetPagination
@@ -75,11 +72,7 @@ class FoodUserViewSet(DjoserUserViewSet):
     def get_queryset(self):
         return User.objects.all()
 
-    @action(
-        detail=False,
-        methods=['post'],
-        permission_classes=[IsAdminOrOwner]
-    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAdminOrOwner])
     def set_password(self, request):
         serializer = CustomSetPasswordSerializer(
             data=request.data, context={'request': request}
@@ -180,43 +173,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'delete']
 
     def list(self, request, *args, **kwargs):
-        user = request.user
-        recipe_is_favorited = request.query_params.get('is_favorited')
-        if recipe_is_favorited:
-            try:
-                recipe_id = int(recipe_is_favorited)
-            except ValueError:
-                return Response(
-                    {'error': 'Некорректный id рецепта'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if not user.is_authenticated:
-                return Response(({'is_favorited': False}))
-            return Response(
-                {
-                    'is_favorited': Favorites.objects.filter(
-                        user=user, recipe=recipe_id
-                    ).exists()
-                }
-            )
-        recipe_in_cart = request.query_params.get('is_in_shopping_cart')
-        if recipe_in_cart:
-            try:
-                recipe_id = int(recipe_in_cart)
-            except ValueError:
-                return Response(
-                    {'error': 'Некорректный id рецепта'},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            if not user.is_authenticated:
-                return Response({'is_in_shopping_cart': False})
-            return Response(
-                {
-                    'is_in_shopping_cart': ShoppingCart.objects.filter(
-                        user=user, recipe=recipe_id
-                    ).exists()
-                }
-            )
         return super().list(request, *args, **kwargs)
 
     def create(self, request, *args, **kwargs):
@@ -236,11 +192,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
         recipe = self.get_object()
-        if not recipe.short_link:
-            recipe.short_link = recipe.generate_short_link()
-            recipe.save()
         short_url = request.build_absolute_uri(f'/s/{recipe.short_link}/')
-        return Response({'short_url': short_url})
+        return Response({'short-link': short_url})
 
     @action(
         detail=True,
@@ -280,12 +233,15 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['post', 'delete'],
+        methods=['get', 'post', 'delete'],
         url_path='shopping_cart',
         permission_classes=[IsAdminOrOwner],
     )
     def shopping_cart(self, request, pk):
         recipe = get_object_or_404(Recipes, pk=pk)
+        if request.method == 'GET':
+            serializer = RecipeSimpleSerializer(recipe)
+            return Response(serializer.data, status=status.HTTP_200_OK)
         if request.method == 'POST':
             is_in_shopping_cart, _ = ShoppingCart.objects.get_or_create(
                 user=request.user, recipe=recipe
@@ -343,17 +299,9 @@ class TagsViewSet(viewsets.ReadOnlyModelViewSet):
     pagination_class = None
 
 
-class ShortLinkRedirectView(SingleObjectMixin, RedirectView):
-    model = Recipes
-    slug_field = 'short_link'
-    slug_url_kwarg = 'short_link'
-
-    def get_redirect_url(self, *args, **kwargs):
-        recipe = get_object_or_404(
-            Recipes, short_link=self.kwargs['short_link']
-        )
-        redirect_url = reverse('recipes-detail', kwargs={'pk': recipe.pk})
-        return redirect_url
-
-    def get_queryset(self):
-        return self.model.objects.filter(short_link=self.kwargs['short_link'])
+def short_link_redirect(request, short_link):
+    print(f'Received short_link: {short_link}')  # Для отладки
+    recipe = get_object_or_404(Recipes, short_link=short_link)
+    full_url = request.build_absolute_uri(f'/recipes/{recipe.pk}')
+    print(f'Redirecting to: {full_url}')  # Для отладки
+    return redirect(full_url)

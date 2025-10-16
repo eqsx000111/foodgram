@@ -5,7 +5,6 @@ import recipes.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("recipes", "0009_remove_subscription_unique_follow_and_more"),
     ]

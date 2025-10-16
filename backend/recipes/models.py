@@ -104,8 +104,7 @@ class Ingredients(models.Model):
         max_length=INGREDIENTS_NAME_MAX_LENGTH, verbose_name='Название'
     )
     measurement_unit = models.CharField(
-        max_length=MEASUREMENT_UNIT_MAX_LENGTH,
-        verbose_name='Единица измерения'
+        max_length=MEASUREMENT_UNIT_MAX_LENGTH, verbose_name='Единица измерения'
     )
 
     class Meta:
@@ -151,12 +150,12 @@ class Recipes(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        if not self.short_link:
+        if not self.pk and not self.short_link:
             self.short_link = self.generate_short_link()
         super().save(*args, **kwargs)
 
     def generate_short_link(self):
-        length = 10
+        length = 6
         characters = string.ascii_letters + string.digits
         while True:
             short_link = ''.join(
@@ -185,9 +184,7 @@ class IngredientsInRecipes(models.Model):
         Recipes, on_delete=models.CASCADE, related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
-        Ingredients,
-        on_delete=models.CASCADE,
-        related_name='ingredient_recipes'
+        Ingredients, on_delete=models.CASCADE, related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(verbose_name='Количество')
 
@@ -196,8 +193,7 @@ class IngredientsInRecipes(models.Model):
         verbose_name_plural = 'Ингредиенты в рецептах'
         constraints = [
             models.UniqueConstraint(
-                fields=['recipe', 'ingredient'],
-                name='unique_recipe_ingredient'
+                fields=['recipe', 'ingredient'], name='unique_recipe_ingredient'
             )
         ]
 

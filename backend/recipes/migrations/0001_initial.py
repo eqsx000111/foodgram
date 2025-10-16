@@ -9,7 +9,6 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -29,7 +28,10 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("password", models.CharField(max_length=128, verbose_name="password")),
+                (
+                    "password",
+                    models.CharField(max_length=128, verbose_name="password"),
+                ),
                 (
                     "last_login",
                     models.DateTimeField(
@@ -63,7 +65,8 @@ class Migration(migrations.Migration):
                 (
                     "date_joined",
                     models.DateTimeField(
-                        default=django.utils.timezone.now, verbose_name="date joined"
+                        default=django.utils.timezone.now,
+                        verbose_name="date joined",
                     ),
                 ),
                 (
@@ -87,8 +90,14 @@ class Migration(migrations.Migration):
                         verbose_name="Адрес электронной почты",
                     ),
                 ),
-                ("first_name", models.CharField(max_length=150, verbose_name="Имя")),
-                ("last_name", models.CharField(max_length=150, verbose_name="Фамилия")),
+                (
+                    "first_name",
+                    models.CharField(max_length=150, verbose_name="Имя"),
+                ),
+                (
+                    "last_name",
+                    models.CharField(max_length=150, verbose_name="Фамилия"),
+                ),
                 ("avatar", models.ImageField(upload_to="users/avatars/")),
                 (
                     "groups",
@@ -134,10 +143,15 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(max_length=128, verbose_name="Название")),
+                (
+                    "name",
+                    models.CharField(max_length=128, verbose_name="Название"),
+                ),
                 (
                     "measurement_unit",
-                    models.CharField(max_length=64, verbose_name="Единица измерения"),
+                    models.CharField(
+                        max_length=64, verbose_name="Единица измерения"
+                    ),
                 ),
             ],
             options={
@@ -158,7 +172,10 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("amount", models.PositiveIntegerField(verbose_name="Количество")),
+                (
+                    "amount",
+                    models.PositiveIntegerField(verbose_name="Количество"),
+                ),
                 (
                     "ingredient",
                     models.ForeignKey(
@@ -257,7 +274,10 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("name", models.CharField(max_length=256, verbose_name="Название")),
+                (
+                    "name",
+                    models.CharField(max_length=256, verbose_name="Название"),
+                ),
                 ("description", models.TextField(verbose_name="Описание")),
                 (
                     "image",
@@ -292,7 +312,9 @@ class Migration(migrations.Migration):
                 (
                     "tag",
                     models.ManyToManyField(
-                        related_name="recipes", to="recipes.tag", verbose_name="Теги"
+                        related_name="recipes",
+                        to="recipes.tag",
+                        verbose_name="Теги",
                     ),
                 ),
             ],
@@ -306,7 +328,8 @@ class Migration(migrations.Migration):
             model_name="ingredientsinrecipes",
             name="recipe",
             field=models.ForeignKey(
-                on_delete=django.db.models.deletion.CASCADE, to="recipes.recipes"
+                on_delete=django.db.models.deletion.CASCADE,
+                to="recipes.recipes",
             ),
         ),
         migrations.AddConstraint(
