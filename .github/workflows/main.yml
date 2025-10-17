@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.10, 3.11, 3.12]
+        python-version: [3.10.2, 3.11, 3.12]
     services:
       postgres:
         image: postgres:13.10
