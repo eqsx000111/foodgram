@@ -1,41 +1,41 @@
-from djoser.views import UserViewSet as DjoserUserViewSet
-
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
+from djoser.views import UserViewSet as DjoserUserViewSet
 from rest_framework import status, viewsets
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
     AllowAny,
     IsAuthenticated,
     IsAuthenticatedOrReadOnly,
 )
+from rest_framework.response import Response
+
 from recipes.models import (
     Favorites,
     Ingredients,
     IngredientsInRecipes,
     Recipes,
     ShoppingCart,
-    Tags,
     Subscription,
+    Tags,
 )
 
-from .permissions import IsAuthorOrAdminOrReadOnly, IsAdminOrOwner
 from .filters import IngredientsFilter, RecipesFilter
+from .permissions import IsAdminOrOwner, IsAuthorOrAdminOrReadOnly
 from .serializers import (
-    FoodUserSerializer,
-    CustomUserCreateSerializer,
     AvatarSerializer,
-    SubscriptionSerializer,
+    CustomSetPasswordSerializer,
+    CustomUserCreateSerializer,
+    FoodUserSerializer,
     IngredientsSerializer,
     RecipeSimpleSerializer,
     RecipesReadSerializer,
     RecipesWriteSerializer,
+    SubscriptionSerializer,
     TagsSerializer,
-    CustomSetPasswordSerializer,
 )
 from .services import generate_shopping_list_pdf
 
@@ -72,11 +72,7 @@ class FoodUserViewSet(DjoserUserViewSet):
     def get_queryset(self):
         return User.objects.all()
 
-    @action(
-        detail=False,
-        methods=['post'],
-        permission_classes=[IsAdminOrOwner]
-    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAdminOrOwner])
     def set_password(self, request):
         serializer = CustomSetPasswordSerializer(
             data=request.data, context={'request': request}

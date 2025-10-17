@@ -1,11 +1,12 @@
 import base64
 from collections import Counter
-from django.core.files.base import ContentFile
-from django.contrib.auth.password_validation import validate_password
+
 from django.contrib.auth import get_user_model
-from djoser.serializers import UserCreateSerializer
+from django.contrib.auth.password_validation import validate_password
+from django.core.files.base import ContentFile
 from djoser.serializers import (
     SetPasswordSerializer as DjoserSetPasswordSerializer,
+    UserCreateSerializer,
 )
 from rest_framework import serializers
 

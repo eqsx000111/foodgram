@@ -1,24 +1,24 @@
-import string
 import random
+import string
+
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import RegexValidator
 from django.db import models
-from django.conf import settings
-
 
 from .constant import (
-    USERNAME_MAX_LENGTH,
-    USERNAME_PATTERN,
     EMAIL_MAX_LENGTH,
     FIRST_NAME_MAX_LENGTH,
-    LAST_NAME_MAX_LENGTH,
-    TAG_MAX_LENGTH,
-    SLUG_MAX_LENGTH,
-    SLUG_PATTERN,
     INGREDIENTS_NAME_MAX_LENGTH,
+    LAST_NAME_MAX_LENGTH,
     MEASUREMENT_UNIT_MAX_LENGTH,
     RECIPES_MAX_LENGTH,
     SHORT_LINK_MAX_LENGTH,
+    SLUG_MAX_LENGTH,
+    SLUG_PATTERN,
+    TAG_MAX_LENGTH,
+    USERNAME_MAX_LENGTH,
+    USERNAME_PATTERN,
 )
 
 
@@ -104,8 +104,7 @@ class Ingredients(models.Model):
         max_length=INGREDIENTS_NAME_MAX_LENGTH, verbose_name='Название'
     )
     measurement_unit = models.CharField(
-        max_length=MEASUREMENT_UNIT_MAX_LENGTH,
-        verbose_name='Единица измерения'
+        max_length=MEASUREMENT_UNIT_MAX_LENGTH, verbose_name='Единица измерения'
     )
 
     class Meta:
@@ -185,9 +184,7 @@ class IngredientsInRecipes(models.Model):
         Recipes, on_delete=models.CASCADE, related_name='recipe_ingredients'
     )
     ingredient = models.ForeignKey(
-        Ingredients,
-        on_delete=models.CASCADE,
-        related_name='ingredient_recipes'
+        Ingredients, on_delete=models.CASCADE, related_name='ingredient_recipes'
     )
     amount = models.PositiveIntegerField(verbose_name='Количество')
 
@@ -196,10 +193,7 @@ class IngredientsInRecipes(models.Model):
         verbose_name_plural = 'Ингредиенты в рецептах'
         constraints = [
             models.UniqueConstraint(
-                fields=[
-                    'recipe',
-                    'ingredient'
-                ], name='unique_recipe_ingredient'
+                fields=['recipe', 'ingredient'], name='unique_recipe_ingredient'
             )
         ]
 
