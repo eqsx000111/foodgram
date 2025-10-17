@@ -13,16 +13,6 @@ from rest_framework.permissions import (
 )
 from rest_framework.response import Response
 
-from recipes.models import (
-    Favorites,
-    Ingredients,
-    IngredientsInRecipes,
-    Recipes,
-    ShoppingCart,
-    Subscription,
-    Tags,
-)
-
 from .filters import IngredientsFilter, RecipesFilter
 from .permissions import IsAdminOrOwner, IsAuthorOrAdminOrReadOnly
 from .serializers import (
@@ -38,6 +28,15 @@ from .serializers import (
     TagsSerializer,
 )
 from .services import generate_shopping_list_pdf
+from recipes.models import (
+    Favorites,
+    Ingredients,
+    IngredientsInRecipes,
+    Recipes,
+    ShoppingCart,
+    Subscription,
+    Tags,
+)
 
 User = get_user_model()
 
@@ -72,7 +71,11 @@ class FoodUserViewSet(DjoserUserViewSet):
     def get_queryset(self):
         return User.objects.all()
 
-    @action(detail=False, methods=['post'], permission_classes=[IsAdminOrOwner])
+    @action(
+        detail=False,
+        methods=['post'],
+        permission_classes=[IsAdminOrOwner]
+    )
     def set_password(self, request):
         serializer = CustomSetPasswordSerializer(
             data=request.data, context={'request': request}

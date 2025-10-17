@@ -18,7 +18,9 @@ else:
 
 def generate_shopping_list_pdf(ingredients):
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="shopping_list.pdf"'
+    response[
+        'Content-Disposition'
+    ] = 'attachment; filename="shopping_list.pdf"'
 
     p = canvas.Canvas(response, pagesize=A4)
 
