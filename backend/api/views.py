@@ -150,7 +150,7 @@ class FoodUserViewSet(DjoserUserViewSet):
         ).delete()
         if not deleted:
             return Response(
-                {'errors': 'Подписка не найдена'},
+                {'errors': 'Подписка не найдена!'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
