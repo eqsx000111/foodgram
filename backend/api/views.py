@@ -3,40 +3,23 @@ from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
+from recipes.models import (Favorites, Ingredients, IngredientsInRecipes,
+                            Recipes, ShoppingCart, Subscription, Tags)
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import (
-    AllowAny,
-    IsAuthenticated,
-    IsAuthenticatedOrReadOnly,
-)
+from rest_framework.permissions import (AllowAny, IsAuthenticated,
+                                        IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
 from .filters import IngredientsFilter, RecipesFilter
 from .permissions import IsAdminOrOwner, IsAuthorOrAdminOrReadOnly
-from .serializers import (
-    AvatarSerializer,
-    CustomSetPasswordSerializer,
-    CustomUserCreateSerializer,
-    FoodUserSerializer,
-    IngredientsSerializer,
-    RecipeSimpleSerializer,
-    RecipesReadSerializer,
-    RecipesWriteSerializer,
-    SubscriptionSerializer,
-    TagsSerializer,
-)
+from .serializers import (AvatarSerializer, CustomSetPasswordSerializer,
+                          CustomUserCreateSerializer, FoodUserSerializer,
+                          IngredientsSerializer, RecipeSimpleSerializer,
+                          RecipesReadSerializer, RecipesWriteSerializer,
+                          SubscriptionSerializer, TagsSerializer)
 from .services import generate_shopping_list_pdf
-from recipes.models import (
-    Favorites,
-    Ingredients,
-    IngredientsInRecipes,
-    Recipes,
-    ShoppingCart,
-    Subscription,
-    Tags,
-)
 
 User = get_user_model()
 

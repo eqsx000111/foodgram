@@ -6,20 +6,11 @@ from django.contrib.auth.models import AbstractUser, BaseUserManager
 from django.core.validators import RegexValidator
 from django.db import models
 
-from .constant import (
-    EMAIL_MAX_LENGTH,
-    FIRST_NAME_MAX_LENGTH,
-    INGREDIENTS_NAME_MAX_LENGTH,
-    LAST_NAME_MAX_LENGTH,
-    MEASUREMENT_UNIT_MAX_LENGTH,
-    RECIPES_MAX_LENGTH,
-    SHORT_LINK_MAX_LENGTH,
-    SLUG_MAX_LENGTH,
-    SLUG_PATTERN,
-    TAG_MAX_LENGTH,
-    USERNAME_MAX_LENGTH,
-    USERNAME_PATTERN,
-)
+from .constant import (EMAIL_MAX_LENGTH, FIRST_NAME_MAX_LENGTH,
+                       INGREDIENTS_NAME_MAX_LENGTH, LAST_NAME_MAX_LENGTH,
+                       MEASUREMENT_UNIT_MAX_LENGTH, RECIPES_MAX_LENGTH,
+                       SHORT_LINK_MAX_LENGTH, SLUG_MAX_LENGTH, SLUG_PATTERN,
+                       TAG_MAX_LENGTH, USERNAME_MAX_LENGTH, USERNAME_PATTERN)
 
 
 def user_avatar_path(instance, filename):

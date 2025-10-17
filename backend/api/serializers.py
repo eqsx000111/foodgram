@@ -4,20 +4,13 @@ from collections import Counter
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.files.base import ContentFile
-from djoser.serializers import (
-    SetPasswordSerializer as DjoserSetPasswordSerializer,
-    UserCreateSerializer,
-)
-from rest_framework import serializers
-
+from djoser.serializers import \
+    SetPasswordSerializer as DjoserSetPasswordSerializer
+from djoser.serializers import UserCreateSerializer
 from recipes.constant import USERNAME_MAX_LENGTH
-from recipes.models import (
-    Ingredients,
-    IngredientsInRecipes,
-    Recipes,
-    Subscription,
-    Tags,
-)
+from recipes.models import (Ingredients, IngredientsInRecipes, Recipes,
+                            Subscription, Tags)
+from rest_framework import serializers
 
 User = get_user_model()
 
