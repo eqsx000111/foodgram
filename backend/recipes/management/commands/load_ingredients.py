@@ -23,12 +23,10 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         file_path = options['file']
         data_type = options['type']
-
         try:
             with open(file_path, encoding='utf-8') as csvfile:
                 reader = csv.reader(csvfile)
                 count = 0
-
                 if data_type == 'ingredients':
                     for row in reader:
                         if not row or len(row) < 2:
@@ -38,7 +36,6 @@ class Command(BaseCommand):
                             name=name, measurement_unit=measurement_unit
                         )
                         count += 1
-
                 elif data_type == 'tags':
                     for row in reader:
                         if not row or len(row) < 3:
@@ -46,13 +43,11 @@ class Command(BaseCommand):
                         name, slug = row[0].strip(), row[1].strip()
                         Tags.objects.get_or_create(name=name, slug=slug)
                         count += 1
-
                 self.stdout.write(
                     self.style.SUCCESS(
                         f'Загружено {count} записей {data_type} из {file_path}'
                     )
                 )
-
         except FileNotFoundError:
             self.stdout.write(self.style.ERROR(f'Файл не найден: {file_path}'))
         except Exception as e:
