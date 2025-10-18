@@ -63,7 +63,6 @@ class RecipesAdmin(admin.ModelAdmin):
         'image',
         'cooking_time',
         'tags',
-        'pub_date',
     )
 
     def get_ingredients_count(self, obj):
