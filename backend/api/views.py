@@ -212,7 +212,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
         delete, _ = Favorites.objects.filter(user=user, recipe=recipe).delete()
         if not delete:
             return Response(
-                {'errors': 'Не было в избранном'},
+                {'errors': 'Не было в избранном!'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
         return Response(status=status.HTTP_204_NO_CONTENT)
