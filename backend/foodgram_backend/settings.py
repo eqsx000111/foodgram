@@ -101,6 +101,10 @@ DJOSER = {
     },
 }
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://foodgramchinatown.ddns.net',
+    'http://foodgramchinatown.ddns.net',
+]
 AUTH_USER_MODEL = 'recipes.FoodUser'
 
 AUTH_PASSWORD_VALIDATORS = [
