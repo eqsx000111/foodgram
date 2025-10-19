@@ -19,7 +19,7 @@ from .serializers import (AvatarSerializer, CustomSetPasswordSerializer,
                           IngredientsSerializer, RecipeSimpleSerializer,
                           RecipesReadSerializer, RecipesWriteSerializer,
                           SubscriptionSerializer, TagsSerializer)
-from .services import generate_shopping_list_pdf
+from .services import generate_shopping_list
 
 User = get_user_model()
 
@@ -261,13 +261,19 @@ class RecipesViewSet(viewsets.ModelViewSet):
             IngredientsInRecipes.objects.filter(
                 recipe__shopping_cart__user=user
             )
-            .values('ingredient__name', 'ingredient__measurement_unit')
+            .values(
+                'ingredient__name',
+                'ingredient__measurement_unit',
+                'recipe__author',
+                'recipe__name'
+            )
             .annotate(total_amount=Sum('amount'))
             .order_by('ingredient__name')
         )
-        if not ingredients.exists():
-            return Response({'errors': 'Список покупок пуст'}, status=400)
-        return generate_shopping_list_pdf(ingredients)
+        recipes = Recipes.objects.filter(
+            shopping_cart__user=user
+        ).select_related('author')
+        return generate_shopping_list(ingredients, user, recipes)
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):
