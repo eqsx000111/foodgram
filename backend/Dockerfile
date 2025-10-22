@@ -23,7 +23,7 @@ RUN pip install -r requirements.txt --no-cache-dir
 
 COPY . .
 
-COPY /data /app/data
+COPY ../data /app/data
 
 EXPOSE 8000
 

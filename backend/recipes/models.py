@@ -1,38 +1,20 @@
-import random
-import string
-
 from django.conf import settings
-from django.contrib.auth.models import AbstractUser, BaseUserManager
-from django.core.validators import RegexValidator
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
 
-from .constant import (EMAIL_MAX_LENGTH, FIRST_NAME_MAX_LENGTH,
-                       INGREDIENTS_NAME_MAX_LENGTH, LAST_NAME_MAX_LENGTH,
-                       MEASUREMENT_UNIT_MAX_LENGTH, RECIPES_MAX_LENGTH,
-                       SHORT_LINK_MAX_LENGTH, SLUG_MAX_LENGTH, SLUG_PATTERN,
-                       TAG_MAX_LENGTH, USERNAME_MAX_LENGTH, USERNAME_PATTERN)
+from .constant import (
+    EMAIL_MAX_LENGTH, FIRST_NAME_MAX_LENGTH,
+    INGREDIENTS_NAME_MAX_LENGTH, LAST_NAME_MAX_LENGTH,
+    MEASUREMENT_UNIT_MAX_LENGTH, RECIPES_MAX_LENGTH,
+    SLUG_MAX_LENGTH, TAG_MAX_LENGTH, USERNAME_MAX_LENGTH,
+    USERNAME_PATTERN
+)
 
 
 def user_avatar_path(instance, filename):
     ext = filename.split('.')[-1]
     return f'users/avatars/user_{instance.id}/avatar.{ext}'
-
-
-class FoodUserManager(BaseUserManager):
-    def create_user(self, email, username, password=None, **extra_fields):
-        if not email:
-            raise ValueError('Email обязателен')
-
-        email = self.normalize_email(email)
-        user = self.model(email=email, username=username, **extra_fields)
-        user.set_password(password)
-        user.save(using=self._db)
-        return user
-
-    def create_superuser(self, email, username, password=None, **extra_fields):
-        extra_fields.setdefault('is_staff', True)
-        extra_fields.setdefault('is_superuser', True)
-        return self.create_user(email, username, password, **extra_fields)
 
 
 class FoodUser(AbstractUser):
@@ -53,10 +35,11 @@ class FoodUser(AbstractUser):
     last_name = models.CharField('Фамилия', max_length=LAST_NAME_MAX_LENGTH)
     avatar = models.ImageField(upload_to=user_avatar_path)
 
-    objects = FoodUserManager()
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = [
         'username',
+        'first_name',
+        'last_name'
     ]
 
     class Meta:
@@ -75,9 +58,6 @@ class Tags(models.Model):
     slug = models.SlugField(
         unique=True,
         max_length=SLUG_MAX_LENGTH,
-        validators=[
-            RegexValidator(regex=SLUG_PATTERN),
-        ],
         verbose_name='Слаг',
     )
 
@@ -100,9 +80,15 @@ class Ingredients(models.Model):
     )
 
     class Meta:
-        verbose_name = 'Ингредиент'
-        verbose_name_plural = 'Ингредиенты'
+        verbose_name = 'Продукт'
+        verbose_name_plural = 'Продукты'
         ordering = ('-name',)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'measurement_unit'],
+                name='unique_ingredient'
+            )
+        ]
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -127,39 +113,13 @@ class Recipes(models.Model):
     image = models.ImageField(
         upload_to='recipes/images/', verbose_name='Картинка'
     )
-    cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время приготовления (мин)'
-    )
-    short_link = models.CharField(
-        max_length=SHORT_LINK_MAX_LENGTH,
-        unique=True,
-        blank=True,
-        null=True,
-        verbose_name='Короткая ссылка',
+    cooking_time = models.PositiveIntegerField(
+        verbose_name='Время приготовления (мин)',
+        validators=[MinValueValidator(1)]
     )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации рецепта'
     )
-
-    def save(self, *args, **kwargs):
-        if not self.pk and not self.short_link:
-            self.short_link = self.generate_short_link()
-        super().save(*args, **kwargs)
-
-    def generate_short_link(self):
-        length = 6
-        characters = string.ascii_letters + string.digits
-        while True:
-            short_link = ''.join(
-                random.choice(characters) for _ in range(length)
-            )
-            if not Recipes.objects.filter(short_link=short_link).exists():
-                return short_link
-
-    def get_short_link(self):
-        if self.short_link:
-            return f'{self.short_link}'
-        return None
 
     class Meta:
         verbose_name = 'Рецепт'
@@ -173,17 +133,20 @@ class Recipes(models.Model):
 
 class IngredientsInRecipes(models.Model):
     recipe = models.ForeignKey(
-        Recipes, on_delete=models.CASCADE, related_name='recipe_ingredients'
+        Recipes, on_delete=models.CASCADE
     )
     ingredient = models.ForeignKey(
         Ingredients, on_delete=models.CASCADE,
-        related_name='ingredient_recipes'
     )
-    amount = models.PositiveIntegerField(verbose_name='Количество')
+    amount = models.PositiveIntegerField(
+        verbose_name='Количество',
+        validators=[MinValueValidator(1)]
+    )
 
     class Meta:
-        verbose_name = 'Ингредиент в рецепте'
-        verbose_name_plural = 'Ингредиенты в рецептах'
+        verbose_name = 'Продукт в рецепте'
+        verbose_name_plural = 'Продукты в рецептах'
+        default_related_name = 'recipe_ingredients'
         constraints = [
             models.UniqueConstraint(
                 fields=['recipe', 'ingredient'],
@@ -202,14 +165,14 @@ class Subscription(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='follower',
-        verbose_name='Подписчик',
+        related_name='followers',
+        verbose_name='Подписчики',
     )
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name='following',
-        verbose_name='Автор',
+        related_name='authors',
+        verbose_name='Авторы',
     )
 
     class Meta:
@@ -228,16 +191,32 @@ class Subscription(models.Model):
         return f'{self.user.username} follows {self.author.username}'
 
 
-class Favorites(models.Model):
+class UserRecipeBaseModel(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        verbose_name='Пользователь',
+        verbose_name='Пользователь'
     )
     recipe = models.ForeignKey(
-        Recipes, on_delete=models.CASCADE, verbose_name='Рецепт'
+        Recipes,
+        on_delete=models.CASCADE,
+        verbose_name='Рецепт'
     )
 
+    class Meta:
+        abstract = True
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_%(app_label)s_%(class)s'
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.user} -> {self.recipe}'
+
+
+class Favorites(UserRecipeBaseModel):
     class Meta:
         constraints = [
             models.UniqueConstraint(
@@ -248,31 +227,9 @@ class Favorites(models.Model):
         verbose_name_plural = 'Избранные рецепты'
         default_related_name = 'favorites'
 
-    def __str__(self):
-        return f'{self.user} -> {self.recipe}'
 
-
-class ShoppingCart(models.Model):
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        verbose_name='Пользователь',
-    )
-    recipe = models.ForeignKey(
-        Recipes,
-        on_delete=models.CASCADE,
-        verbose_name='Рецепт',
-        related_name='shopping_cart',
-    )
-
+class ShoppingCart(UserRecipeBaseModel):
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'], name='unique_shopping_cart'
-            ),
-        ]
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Списки покупок'
-
-    def __str__(self):
-        return f'{self.user} -> {self.recipe}'
+        default_related_name = 'shopping_carts'

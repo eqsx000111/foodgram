@@ -1,0 +1,58 @@
+[
+    {
+      "name": "завтрак",
+      "slug": "zavtrak"
+    },
+    {
+      "name": "обед",
+      "slug": "obed"
+    },
+    {
+      "name": "ужин",
+      "slug": "uzhin"
+    },
+    {
+      "name": "десерт",
+      "slug": "desert"
+    },
+    {
+      "name": "быстро",
+      "slug": "bystro"
+    },
+    {
+      "name": "веган",
+      "slug": "vegan"
+    },
+    {
+      "name": "без глютена",
+      "slug": "bez-gluten"
+    },
+    {
+      "name": "постное",
+      "slug": "postnoe"
+    },
+    {
+      "name": "новый год",
+      "slug": "novyj-god"
+    },
+    {
+      "name": "лето",
+      "slug": "leto"
+    },
+    {
+      "name": "здоровое питание",
+      "slug": "zdorovoe-pitanie"
+    },
+    {
+      "name": "из духовки",
+      "slug": "iz-duhovki"
+    },
+    {
+      "name": "суп",
+      "slug": "sup"
+    },
+    {
+      "name": "салат",
+      "slug": "salat"
+    }
+  ]
