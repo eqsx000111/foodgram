@@ -31,7 +31,9 @@ class FoodUser(AbstractUser):
         max_length=EMAIL_MAX_LENGTH,
         verbose_name='Адрес электронной почты',
     )
-    first_name = models.CharField('Имя', max_length=FIRST_NAME_MAX_LENGTH)
+    first_name = models.CharField(
+        'Имя', max_length=FIRST_NAME_MAX_LENGTH
+    )
     last_name = models.CharField('Фамилия', max_length=LAST_NAME_MAX_LENGTH)
     avatar = models.ImageField(upload_to=user_avatar_path)
 
