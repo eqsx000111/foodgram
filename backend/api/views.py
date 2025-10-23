@@ -9,25 +9,35 @@ from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.permissions import (
-    AllowAny, IsAuthenticated,
-    IsAuthenticatedOrReadOnly
+    AllowAny,
+    IsAuthenticated,
+    IsAuthenticatedOrReadOnly,
 )
 from rest_framework.response import Response
 from rest_framework.validators import ValidationError
 
 from .filters import IngredientsFilter, RecipesFilter
-from recipes.models import (
-    Favorites, Ingredients, IngredientsInRecipes,
-    Recipes, ShoppingCart, Subscription, Tags
-)
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
-    AvatarSerializer, FoodUserSerializer,
-    IngredientsSerializer, RecipeSimpleSerializer,
-    RecipesReadSerializer, RecipesWriteSerializer,
-    SubscriptionSerializer, TagsSerializer
+    AvatarSerializer,
+    FoodUserSerializer,
+    IngredientsSerializer,
+    RecipeSimpleSerializer,
+    RecipesReadSerializer,
+    RecipesWriteSerializer,
+    SubscribedUserSerializer,
+    TagsSerializer,
 )
 from .services import generate_shopping_list
+from recipes.models import (
+    Favorites,
+    Ingredients,
+    IngredientsInRecipes,
+    Recipes,
+    ShoppingCart,
+    Subscription,
+    Tags,
+)
 
 User = get_user_model()
 
@@ -36,9 +46,6 @@ class FoodUserViewSet(DjoserUserViewSet):
     queryset = User.objects.all()
     permission_classes = [AllowAny]
     pagination_class = LimitOffsetPagination
-
-    def get_queryset(self):
-        return self.queryset
 
     @action(
         detail=False,
@@ -90,15 +97,14 @@ class FoodUserViewSet(DjoserUserViewSet):
             raise ValidationError(
                 {'errors': 'Нельзя подписаться на самого себя!'}
             )
-        subscription, _ = Subscription.objects.get_or_create(
+        _, created = Subscription.objects.get_or_create(
             user=user, author=author
         )
-        if not _:
-            raise ValidationError({'errors': 'Уже подписаны!'})
-        serializer = SubscriptionSerializer(
-            subscription.author, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if not created:
+            raise ValidationError({'errors': f'Уже подписаны на {author}!'})
+        return Response(SubscribedUserSerializer(
+            author, context={'request': request}
+        ).data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=False,
@@ -106,12 +112,16 @@ class FoodUserViewSet(DjoserUserViewSet):
         permission_classes=[IsAuthenticated]
     )
     def subscriptions(self, request):
-        queryset = User.objects.filter(authors__user=request.user)
-        page = self.paginate_queryset(queryset)
-        serializer = SubscriptionSerializer(
-            page, many=True, context={'request': request}
+        return self.get_paginated_response(
+            SubscribedUserSerializer(
+                self.paginate_queryset(
+                    User.objects.filter(
+                        authors__user=request.user
+                    )),
+                many=True,
+                context={'request': request}
+            ).data
         )
-        return self.get_paginated_response(serializer.data)
 
 
 class RecipesViewSet(viewsets.ModelViewSet):
@@ -132,33 +142,33 @@ class RecipesViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['get'], url_path='get-link')
     def get_short_link(self, request, pk=None):
         if not self.queryset.filter(pk=pk).exists():
-            raise NotFound('Рецепт не найден!')
-        short_url = request.build_absolute_uri(
-            reverse('recipe-short-link', kwargs={'pk': pk})
-        )
-        return Response({'short-link': short_url})
+            raise NotFound(f'Рецепт с id={pk} не найден!')
+        return Response({'short-link': request.build_absolute_uri(
+            reverse('recipe-short-link', args=[pk])
+        )})
 
     @staticmethod
     def favorite_shopping_cart_related(
-        model, user, recipe_id, serializer_class, method_name
+        model, user, recipe_id, method, name
     ):
+        if method == 'DELETE':
+            get_object_or_404(
+                model, user=user, recipe_id=recipe_id
+            ).delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
         recipe = get_object_or_404(Recipes, pk=recipe_id)
-        if method_name == 'POST':
-            _, created = model.objects.get_or_create(
-                user=user, recipe=recipe
+        _, created = model.objects.get_or_create(
+            user=user, recipe=recipe
+        )
+        if not created:
+            raise ValidationError(
+                {'errors': f'Рецепт {recipe.name} - уже добавлен! в {name}!'}
             )
-            if not created:
-                raise ValidationError(
-                    {'errors': f'Рецепт {recipe.name} - уже добавлен!'}
-                )
-            serializer = serializer_class(recipe)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        delete, _ = model.objects.filter(
-            user=user, recipe_id=recipe_id
-        ).delete()
-        if not delete:
-            raise NotFound('Запись не найдена')
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            RecipeSimpleSerializer(
+                recipe
+            ).data, status=status.HTTP_201_CREATED
+        )
 
     @action(
         detail=True,
@@ -172,8 +182,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             model=Favorites,
             user=request.user,
             recipe_id=pk,
-            serializer_class=RecipeSimpleSerializer,
-            method_name=request.method
+            method=request.method,
+            name='избранное'
         )
 
     @action(
@@ -187,8 +197,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             model=ShoppingCart,
             user=request.user,
             recipe_id=pk,
-            serializer_class=RecipeSimpleSerializer,
-            method_name=request.method
+            method=request.method,
+            name='корзину'
         )
 
     @action(
@@ -209,7 +219,6 @@ class RecipesViewSet(viewsets.ModelViewSet):
         )
         recipes = (
             Recipes.objects.filter(shopping_carts__user=user)
-            .values('name', 'author__username')
             .distinct()
         )
         return generate_shopping_list(ingredients, user, recipes)

@@ -107,7 +107,7 @@ class Recipes(models.Model):
     ingredients = models.ManyToManyField(
         Ingredients,
         through='IngredientsInRecipes',
-        verbose_name='Ингредиенты',
+        verbose_name='Продукты',
     )
     tags = models.ManyToManyField(Tags, verbose_name='Теги')
     image = models.ImageField(
@@ -218,11 +218,6 @@ class UserRecipeBaseModel(models.Model):
 
 class Favorites(UserRecipeBaseModel):
     class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['user', 'recipe'], name='unique_favorite'
-            ),
-        ]
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные рецепты'
         default_related_name = 'favorites'
