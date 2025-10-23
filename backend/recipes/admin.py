@@ -9,15 +9,15 @@ from .models import (
 )
 
 
-class RelatedCountMixin:
+class RecipesCountAdmin(admin.ModelAdmin):
 
-    @staticmethod
-    def get_related_count(obj, related_name):
-        return getattr(obj, related_name).count()
+    @admin.display(description='в рецептах')
+    def get_recipes_count(self, obj):
+        return obj.recipes.count()
 
 
 @admin.register(FoodUser)
-class FoodUserAdmin(UserAdmin, RelatedCountMixin):
+class FoodUserAdmin(UserAdmin):
     list_display = (
         'id',
         'username',
@@ -45,15 +45,15 @@ class FoodUserAdmin(UserAdmin, RelatedCountMixin):
 
     @admin.display(description='рецептов')
     def recipes_count(self, user):
-        return self.get_related_count(user, 'recipes')
+        return getattr(user, 'recipes').count()
 
     @admin.display(description='подписок')
     def subscriptions_count(self, user):
-        return self.get_related_count(user, 'followers')
+        return getattr(user, 'followers').count()
 
     @admin.display(description='подписчиков')
     def subscribers_count(self, user):
-        return self.get_related_count(user, 'authors')
+        return getattr(user, 'authors').count()
 
 
 @admin.register(Subscription)
@@ -77,7 +77,7 @@ class IngredientsInRecipesInline(admin.TabularInline):
 
 
 @admin.register(Ingredients)
-class IngredientsAdmin(admin.ModelAdmin, RelatedCountMixin):
+class IngredientsAdmin(RecipesCountAdmin):
     list_display = (
         'name',
         'measurement_unit',
@@ -87,12 +87,9 @@ class IngredientsAdmin(admin.ModelAdmin, RelatedCountMixin):
     list_filter = ('measurement_unit', IsInRecipesFilter)
     ordering = ('name',)
 
-    def get_recipes_count(self, ingredients):
-        return self.get_related_count(ingredients, 'recipes')
-
 
 @admin.register(Recipes)
-class RecipesAdmin(admin.ModelAdmin, RelatedCountMixin):
+class RecipesAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
@@ -120,11 +117,11 @@ class RecipesAdmin(admin.ModelAdmin, RelatedCountMixin):
 
     @admin.display(description='Кол-во продуктов')
     def get_ingredients_count(self, recipe):
-        return self.get_related_count(recipe, 'recipe_ingredients')
+        return getattr(recipe, 'recipe_ingredients').count()
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, recipe):
-        return self.get_related_count(recipe, 'favorites')
+        return getattr(recipe, 'favorites').count()
 
     @mark_safe
     @admin.display(description='Продукты')
@@ -136,7 +133,9 @@ class RecipesAdmin(admin.ModelAdmin, RelatedCountMixin):
 
     @admin.display(description='Теги')
     def get_tags(self, recipe):
-        return recipe.tags.all()
+        return ','.join(
+            f'{tag.name}' for tag in recipe.tags.all()
+        )
 
     @mark_safe
     @admin.display(description='Картинка')
@@ -155,11 +154,7 @@ class IngredientsInRecipesAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tags)
-class TagsAdmin(admin.ModelAdmin, RelatedCountMixin):
-    list_display = ('name', 'slug', 'get_tags_in_recipes_count')
+class TagsAdmin(RecipesCountAdmin):
+    list_display = ('name', 'slug', 'get_recipes_count')
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
-
-    @admin.display(description='в рецептах')
-    def get_tags_in_recipes_count(self, tags):
-        return self.get_related_count(tags, 'recipes')

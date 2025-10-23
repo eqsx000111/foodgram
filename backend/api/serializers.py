@@ -101,22 +101,22 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
         if not tags:
             errors['tags'] = 'Необходимо добавить минимум один тег!'
         tag_ids = [tag.id for tag in tags]
-        duplicates_tags = [
+        duplicates_tags = {
             tag for tag, count in Counter(tag_ids).items() if count > 1
-        ]
+        }
         if duplicates_tags:
             duplicates_tag_names = [
                 tag.name for tag in tags if tag.id in duplicates_tags
             ]
             errors['tags'] = (
                 f'Следующие теги повторяются: '
-                f'{set(duplicates_tag_names)}.'
+                f'{duplicates_tag_names}.'
             )
 
         ingredient_ids = [item['ingredient'].id for item in ingredients]
-        duplicates_ingredients = [
+        duplicates_ingredients = {
             i for i, count in Counter(ingredient_ids).items() if count > 1
-        ]
+        }
         if duplicates_ingredients:
             duplicates_ingredients_names = [
                 item['ingredient'].name for item in ingredients
@@ -124,7 +124,7 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
             ]
             errors['ingredients'] = (
                 f'Следующие продукты повторяются: '
-                f'{set(duplicates_ingredients_names)}.'
+                f'{duplicates_ingredients_names}.'
             )
         if errors:
             raise serializers.ValidationError(errors)
@@ -157,14 +157,16 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         ingredients_data, tags_data = self.pop_validated_data(validated_data)
         recipe = super().create(validated_data)
-        return self.ingredients_to_create(recipe, ingredients_data, tags_data)
+        self.ingredients_to_create(recipe, ingredients_data, tags_data)
+        return recipe
 
     def update(self, instance, validated_data):
         ingredients_data, tags_data = self.pop_validated_data(validated_data)
         instance = super().update(instance, validated_data)
-        return self.ingredients_to_create(
+        self.ingredients_to_create(
             instance, ingredients_data, tags_data, is_update=True
         )
+        return instance
 
     def to_representation(self, instance):
         return RecipesReadSerializer(

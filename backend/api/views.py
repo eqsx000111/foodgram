@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Sum
+from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
@@ -149,20 +150,21 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @staticmethod
     def favorite_shopping_cart_related(
-        model, user, recipe_id, method, name
+        model, recipe_id, request
     ):
-        if method == 'DELETE':
+        if request.method == 'DELETE':
             get_object_or_404(
-                model, user=user, recipe_id=recipe_id
+                model, user=request.user, recipe_id=recipe_id
             ).delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         recipe = get_object_or_404(Recipes, pk=recipe_id)
         _, created = model.objects.get_or_create(
-            user=user, recipe=recipe
+            user=request.user, recipe=recipe
         )
         if not created:
             raise ValidationError(
-                {'errors': f'Рецепт {recipe.name} - уже добавлен! в {name}!'}
+                {'errors': f'Рецепт {recipe.name} - уже добавлен'
+                 f' в {model._meta.verbose_name}!'}
             )
         return Response(
             RecipeSimpleSerializer(
@@ -180,10 +182,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         return self.favorite_shopping_cart_related(
             model=Favorites,
-            user=request.user,
+            request=request,
             recipe_id=pk,
-            method=request.method,
-            name='избранное'
         )
 
     @action(
@@ -195,10 +195,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
     def shopping_cart(self, request, pk):
         return self.favorite_shopping_cart_related(
             model=ShoppingCart,
-            user=request.user,
+            request=request,
             recipe_id=pk,
-            method=request.method,
-            name='корзину'
         )
 
     @action(
@@ -221,7 +219,12 @@ class RecipesViewSet(viewsets.ModelViewSet):
             Recipes.objects.filter(shopping_carts__user=user)
             .distinct()
         )
-        return generate_shopping_list(ingredients, user, recipes)
+        return FileResponse(
+            generate_shopping_list(ingredients, user, recipes),
+            as_attachment=True,
+            filename='shopping_list.txt',
+            content_type='text/plain'
+        )
 
 
 class IngredientsViewSet(viewsets.ReadOnlyModelViewSet):

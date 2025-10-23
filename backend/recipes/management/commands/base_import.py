@@ -21,16 +21,14 @@ class BaseImportCommand(BaseCommand):
         try:
             with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
-
-            objs = []
-            for item in data:
-                obj_data = {**item}
-                objs.append(self.model(**obj_data))
-
-            self.model.objects.bulk_create(objs, ignore_conflicts=True)
+            initial_count = self.model.objects.count()
+            self.model.objects.bulk_create(
+                [self.model(**item) for item in data], ignore_conflicts=True
+            )
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Загружено {len(objs)} записей из {file_path}'
+                    f'Загружено {self.model.objects.count() - initial_count} '
+                    f'записей из {file_path}'
                 )
             )
         except Exception as e:
