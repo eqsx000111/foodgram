@@ -88,6 +88,7 @@ jobs:
           remote_host: ${{ secrets.HOST }}
           remote_user: ${{ secrets.USER }}
           remote_key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
         with:
