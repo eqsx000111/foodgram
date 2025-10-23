@@ -91,10 +91,10 @@ docker-compose exec backend python manage.py migrate
 docker-compose exec backend python manage.py createsuperuser
 
 # Загрузка тестовых данных ингредиентов
-docker-compose exec backend python manage.py import_ingredients --file path/to/ingredients.json
+docker-compose exec backend python manage.py load_ingredients --file data/ingredients.json
 
 # Загрузка тестовых данных тегов
-docker-compose exec backend python manage.py import_tags --file path/to/tags.json
+docker-compose exec backend python manage.py load_tags --file data/tags.json
 
 # Сборка статики
 docker-compose exec backend python manage.py collectstatic --no-input
@@ -106,11 +106,11 @@ docker-compose exec backend python manage.py collectstatic --no-input
 docker-compose -f docker-compose.production.yml up -d --build
 ```
 
-Приложение будет доступно по адресу: `http://localhost/`
+Приложение будет доступно по адресу: [localhost](http://localhost/)
 
-API документация: `http://localhost/api/docs/`
+API документация: [API docs](http://localhost/api/docs/)
 
-Административная панель: `http://localhost/admin/`
+Административная панель: [Админка](http://localhost/admin/)
 
 
 ## Структура проекта
@@ -166,7 +166,7 @@ Workflow находится в `.github/workflows/main.yml`
 
 **GitHub:** [eqsx000111](https://github.com/eqsx000111)
 **Email:** [deddotu@yandex.ru](mailto:deddotu@yandex.ru)  
-**Telegram:** [@ваш_ник](https://t.me/ваш_ник)
+**ФИО:** Ильницкий Иван Александрович 
 ## Лицензия
 
 Этот проект создан в образовательных целях.
