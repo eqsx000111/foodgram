@@ -18,5 +18,7 @@ class IsInRecipesFilter(admin.SimpleListFilter):
                 recipe_ingredients__isnull=False
             ).distinct()
         if self.value() == 'no':
-            return ingredients.filter(recipe_ingredients__isnull=True)
+            return ingredients.filter(
+                recipe_ingredients__isnull=True
+            )
         return ingredients
