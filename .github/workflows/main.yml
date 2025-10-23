@@ -85,8 +85,8 @@ jobs:
           switches: -avz --delete
           path: docker-compose.production.yml
           remote_path: /home/yc-user/foodgram/
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_user: ${{ secrets.SSH_USERNAME }}
+          remote_host: ${{ secrets.HOST }}
+          remote_user: ${{ secrets.USER }}
           remote_key: ${{ secrets.SSH_KEY }}
       - name: Executing remote ssh commands to deploy
         uses: appleboy/ssh-action@master
