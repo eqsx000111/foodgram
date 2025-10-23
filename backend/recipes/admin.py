@@ -39,7 +39,9 @@ class FoodUserAdmin(UserAdmin, RelatedCountMixin):
     @admin.display(description='Аватар')
     @mark_safe
     def get_avatar(self, user):
-        return f'<img src="{user.avatar.url}" width="50" height="50"/>'
+        if user.avatar and hasattr(user.avatar, 'url'):
+            return f'<img src="{user.avatar.url}" width="50" height="50"/>'
+        return '—'
 
     @admin.display(description='рецептов')
     def recipes_count(self, user):
@@ -128,8 +130,8 @@ class RecipesAdmin(admin.ModelAdmin, RelatedCountMixin):
     @admin.display(description='Продукты')
     def get_ingredients_in_recipe(self, recipe):
         return '<br>'.join(
-            f'{i.name} {i.amount} ({i.measurement_unit})'
-            for i in recipe.ingredients.all()
+            f'{i.ingredient.name} {i.amount} ({i.ingredient.measurement_unit})'
+            for i in recipe.recipe_ingredients.all()
         )
 
     @admin.display(description='Теги')
