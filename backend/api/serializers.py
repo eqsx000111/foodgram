@@ -146,7 +146,6 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
             for item in ingredients_data
         ]
         IngredientsInRecipes.objects.bulk_create(ingredients_to_create)
-        return recipe
 
     @staticmethod
     def pop_validated_data(validated_data):
@@ -162,11 +161,10 @@ class RecipesWriteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients_data, tags_data = self.pop_validated_data(validated_data)
-        instance = super().update(instance, validated_data)
         self.ingredients_to_create(
             instance, ingredients_data, tags_data, is_update=True
         )
-        return instance
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         return RecipesReadSerializer(

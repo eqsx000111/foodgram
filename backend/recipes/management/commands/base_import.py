@@ -21,13 +21,12 @@ class BaseImportCommand(BaseCommand):
         try:
             with open(file_path, encoding='utf-8') as f:
                 data = json.load(f)
-            initial_count = self.model.objects.count()
-            self.model.objects.bulk_create(
-                [self.model(**item) for item in data], ignore_conflicts=True
+            items_list = self.model.objects.bulk_create(
+                [self.model(**item) for item in data], ignore_conflicts=True,
             )
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Загружено {self.model.objects.count() - initial_count} '
+                    f'Загружено {len(items_list)} '
                     f'записей из {file_path}'
                 )
             )

@@ -6,7 +6,7 @@ from django.template.loader import render_to_string
 def generate_shopping_list(ingredients, user, recipes):
     context = {
         'user': user,
-        'date': datetime.now().strftime('%d.%m.%Y %H:%M'),
+        'date': datetime.now().strftime('%d %B %Y'),
         'ingredients': ingredients,
         'recipes': recipes
     }

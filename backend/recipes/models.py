@@ -116,8 +116,8 @@ class Recipes(models.Model):
         upload_to='recipes/images/', verbose_name='Картинка'
     )
     cooking_time = models.PositiveIntegerField(
-        verbose_name='Время приготовления (мин)',
-        validators=[MinValueValidator(1)]
+        verbose_name='Время (мин)',
+        validators=[MinValueValidator(1)]   
     )
     pub_date = models.DateTimeField(
         auto_now_add=True, verbose_name='Дата публикации рецепта'

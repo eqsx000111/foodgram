@@ -1,36 +1,60 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import Group
 from django.utils.safestring import mark_safe
 
 from .filters import IsInRecipesFilter
 from .models import (
     FoodUser, Ingredients, IngredientsInRecipes, Recipes,
-    Subscription, Tags
+    Subscription, Tags, ShoppingCart
 )
 
 
-class RecipesCountAdmin(admin.ModelAdmin):
+admin.site.unregister(Group)
+
+
+class RecipesCount:
 
     @admin.display(description='в рецептах')
     def get_recipes_count(self, obj):
         return obj.recipes.count()
 
 
+class ShoppingCartInline(admin.TabularInline):
+    model = ShoppingCart
+    extra = 0
+    can_delete = True
+    verbose_name = 'Рецепт'
+    verbose_name_plural = 'Корзина покупок'
+
+
 @admin.register(FoodUser)
-class FoodUserAdmin(UserAdmin):
+class FoodUserAdmin(UserAdmin, RecipesCount):
     list_display = (
         'id',
         'username',
         'get_full_name',
         'email',
         'get_avatar',
-        'recipes_count',
+        'get_recipes_count',
         'subscriptions_count',
         'subscribers_count',
 
     )
-    search_fields = ('username', 'email', 'first_name', 'last_name')
     readonly_fields = ('get_avatar',)
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('username', 'password')
+        }),
+        ('Персональная информация', {
+            'fields': ('first_name', 'last_name', 'email')
+        }),
+        ('Настройка аватара', {
+            'fields': ('avatar', 'get_avatar')
+        }),
+    )
+    inlines = [ShoppingCartInline]
+    search_fields = ('username', 'email', 'first_name', 'last_name')
 
     @admin.display(description='ФИО')
     def get_full_name(self, user):
@@ -43,17 +67,13 @@ class FoodUserAdmin(UserAdmin):
             return f'<img src="{user.avatar.url}" width="50" height="50"/>'
         return '—'
 
-    @admin.display(description='рецептов')
-    def recipes_count(self, user):
-        return getattr(user, 'recipes').count()
-
     @admin.display(description='подписок')
     def subscriptions_count(self, user):
-        return getattr(user, 'followers').count()
+        return user.followers.count()
 
     @admin.display(description='подписчиков')
     def subscribers_count(self, user):
-        return getattr(user, 'authors').count()
+        return user.authors.count()
 
 
 @admin.register(Subscription)
@@ -77,7 +97,7 @@ class IngredientsInRecipesInline(admin.TabularInline):
 
 
 @admin.register(Ingredients)
-class IngredientsAdmin(RecipesCountAdmin):
+class IngredientsAdmin(admin.ModelAdmin, RecipesCount):
     list_display = (
         'name',
         'measurement_unit',
@@ -93,8 +113,8 @@ class RecipesAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'name',
-        'cooking_time',
         'author',
+        'cooking_time',
         'get_favorites_count',
         'get_ingredients_in_recipe',
         'get_tags',
@@ -103,25 +123,28 @@ class RecipesAdmin(admin.ModelAdmin):
     )
     list_filter = ('tags', 'cooking_time', 'author')
     search_fields = ('name', 'author__username')
-    filter_horizontal = ('tags',)
     ordering = ('-pub_date',)
     inlines = [IngredientsInRecipesInline]
-    fields = (
-        'name',
-        'author',
-        'text',
-        'image',
-        'cooking_time',
-        'tags',
+    readonly_fields = ('get_image',)
+    fieldsets = (
+        ('Основная информация', {
+            'fields': ('name', 'author', 'text', 'cooking_time')
+        }),
+        ('Изображение', {
+            'fields': ('image', 'get_image'),
+        }),
+        ('Теги', {
+            'fields': ('tags',)
+        }),
     )
 
-    @admin.display(description='Кол-во продуктов')
+    @admin.display(description=' продуктов')
     def get_ingredients_count(self, recipe):
-        return getattr(recipe, 'recipe_ingredients').count()
+        return recipe.recipe_ingredients.count()
 
     @admin.display(description='В избранном')
     def get_favorites_count(self, recipe):
-        return getattr(recipe, 'favorites').count()
+        return recipe.favorites.count()
 
     @mark_safe
     @admin.display(description='Продукты')
@@ -131,10 +154,11 @@ class RecipesAdmin(admin.ModelAdmin):
             for i in recipe.recipe_ingredients.all()
         )
 
+    @mark_safe
     @admin.display(description='Теги')
     def get_tags(self, recipe):
-        return ','.join(
-            f'{tag.name}' for tag in recipe.tags.all()
+        return '<br>'.join(
+            tag.name for tag in recipe.tags.all()
         )
 
     @mark_safe
@@ -154,7 +178,8 @@ class IngredientsInRecipesAdmin(admin.ModelAdmin):
 
 
 @admin.register(Tags)
-class TagsAdmin(RecipesCountAdmin):
+class TagsAdmin(admin.ModelAdmin, RecipesCount):
     list_display = ('name', 'slug', 'get_recipes_count')
+    readonly_fields = ('get_recipes_count',)
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
