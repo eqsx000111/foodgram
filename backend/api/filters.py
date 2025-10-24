@@ -45,4 +45,3 @@ class RecipesFilter(django_filters.FilterSet):
         if value:
             return queryset.filter(shopping_carts__user=user)
         return queryset.exclude(shopping_carts__user=user)
-
