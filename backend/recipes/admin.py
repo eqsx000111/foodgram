@@ -5,7 +5,7 @@ from django.utils.safestring import mark_safe
 
 from .filters import IsInRecipesFilter
 from .models import (
-    FoodUser, Ingredients, IngredientsInRecipes, Recipes,
+    Favorites, FoodUser, Ingredients, IngredientsInRecipes, Recipes,
     Subscription, Tags, ShoppingCart
 )
 
@@ -24,8 +24,20 @@ class ShoppingCartInline(admin.TabularInline):
     model = ShoppingCart
     extra = 0
     can_delete = True
+    fields = ('recipe', 'recipe_author')
+    readonly_fields = ('recipe_author',)
+
+    @admin.display(description='Автор рецепта')
+    def recipe_author(self, obj):
+        return obj.recipe.author.username
+
+
+class FavoritesInline(admin.TabularInline):
+    model = Favorites
+    extra = 0
+    can_delete = True
     verbose_name = 'Рецепт'
-    verbose_name_plural = 'Корзина покупок'
+    verbose_name_plural = 'Избранное'
 
 
 @admin.register(FoodUser)
@@ -53,7 +65,7 @@ class FoodUserAdmin(UserAdmin, RecipesCount):
             'fields': ('avatar', 'get_avatar')
         }),
     )
-    inlines = [ShoppingCartInline]
+    inlines = [ShoppingCartInline, FavoritesInline]
     search_fields = ('username', 'email', 'first_name', 'last_name')
 
     @admin.display(description='ФИО')
@@ -119,7 +131,6 @@ class RecipesAdmin(admin.ModelAdmin):
         'get_ingredients_in_recipe',
         'get_tags',
         'get_image',
-        'get_ingredients_count',
     )
     list_filter = ('tags', 'cooking_time', 'author')
     search_fields = ('name', 'author__username')
@@ -183,3 +194,29 @@ class TagsAdmin(admin.ModelAdmin, RecipesCount):
     readonly_fields = ('get_recipes_count',)
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
+
+
+@admin.register(ShoppingCart)
+class ShoppingCartAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'user',
+        'get_user_cart_count',
+    )
+
+    @admin.display(description='в корзине')
+    def get_user_cart_count(self, obj):
+        return obj.user.shopping_carts.count()
+
+
+@admin.register(Favorites)
+class FavoritesAdmin(admin.ModelAdmin):
+    list_display = (
+        'id',
+        'user',
+        'get_favorites_count'
+    )
+
+    @admin.display(description='в избранном')
+    def get_favorites_count(self, obj):
+        return obj.user.favorites.count()

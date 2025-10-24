@@ -128,7 +128,7 @@ class FoodUserViewSet(DjoserUserViewSet):
 class RecipesViewSet(viewsets.ModelViewSet):
     queryset = Recipes.objects.all()
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
-    filter_backends = (DjangoFilterBackend,)
+    filter_backends = [DjangoFilterBackend]
     filterset_class = RecipesFilter
     http_method_names = ['get', 'post', 'patch', 'delete']
 
@@ -188,7 +188,7 @@ class RecipesViewSet(viewsets.ModelViewSet):
 
     @action(
         detail=True,
-        methods=['get', 'post', 'delete'],
+        methods=['post', 'delete'],
         url_path='shopping_cart',
         permission_classes=[IsAuthenticated],
     )
@@ -215,9 +215,8 @@ class RecipesViewSet(viewsets.ModelViewSet):
             .annotate(total_amount=Sum('amount'))
             .order_by('ingredient__name')
         )
-        recipes = (
-            Recipes.objects.filter(shopping_carts__user=user)
-            .distinct()
+        recipes = Recipes.objects.filter(
+            shopping_carts__user=user
         )
         return FileResponse(
             generate_shopping_list(ingredients, user, recipes),

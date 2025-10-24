@@ -1,12 +1,20 @@
 Список покупок для пользователя: {{ user.username }}
-Дата составления: {{ date }}
+Дата составления: {{ date|date:'j E Y H:i' }}
 
 Продукты:
++----+----------------------+--------+----------------+
+| №  | Название             | Кол-во | Ед. измерения   |
++----+----------------------+--------+----------------+
 {% for item in ingredients %}
-    {{ forloop.counter }}. {{ item.ingredient__name|capfirst }} — {{ item.total_amount }} {{ item.ingredient__measurement_unit }}
+| {{ forloop.counter|ljust:2 }} | {{ item.ingredient__name|capfirst|ljust:20 }} | {{ item.total_amount|stringformat:"-6s" }} | {{ item.ingredient__measurement_unit|ljust:14 }} |
 {% endfor %}
++----+----------------------+--------+----------------+
 
 Рецепты:
++----+----------------------+----------------+
+| №  | Название             | Автор          |
++----+----------------------+----------------+
 {% for recipe in recipes %}
-    {{forloop.counter}}. {{ recipe.name }} ({{ recipe.author__username }})
+| {{ forloop.counter|ljust:2 }} | {{ recipe.name|ljust:20 }} | {{ recipe.author.username|ljust:14 }} |
 {% endfor %}
++----+----------------------+----------------+

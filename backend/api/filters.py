@@ -15,27 +15,34 @@ class IngredientsFilter(django_filters.FilterSet):
 class RecipesFilter(django_filters.FilterSet):
     author = django_filters.NumberFilter(field_name='author__id')
     tags = django_filters.AllValuesMultipleFilter(field_name='tags__slug')
-    is_favorited = django_filters.BooleanFilter(method='filter_is_favorited')
+    is_favorited = django_filters.BooleanFilter(
+        method='filter_is_favorited',
+        field_name='is_favorited',
+        widget=django_filters.widgets.BooleanWidget()
+    )
     is_in_shopping_cart = django_filters.BooleanFilter(
-        method='filter_is_in_shopping_cart'
+        method='filter_is_in_shopping_cart',
+        field_name='is_in_shopping_cart',
+        widget=django_filters.widgets.BooleanWidget()
     )
 
     class Meta:
         model = Recipes
         fields = ('author', 'tags', 'is_favorited', 'is_in_shopping_cart')
 
-    def filter_is_favorited(self, recipes, name, value):
+    def filter_is_favorited(self, queryset, name, value):
         user = self.request.user
         if not user.is_authenticated:
-            return recipes.none()
+            return queryset.none()
         if value:
-            return recipes.filter(favorites__user=user)
-        return recipes
+            return queryset.filter(favorites__user=user)
+        return queryset.exclude(favorites__user=user)
 
-    def filter_is_in_shopping_cart(self, recipes, name, value):
+    def filter_is_in_shopping_cart(self, queryset, name, value):
         user = self.request.user
         if not user.is_authenticated:
-            return recipes.none()
+            return queryset.none()
         if value:
-            return recipes.filter(shopping_cart__user=user)
-        return recipes
+            return queryset.filter(shopping_carts__user=user)
+        return queryset.exclude(shopping_carts__user=user)
+
