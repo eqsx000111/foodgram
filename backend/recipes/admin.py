@@ -91,6 +91,7 @@ class FoodUserAdmin(UserAdmin, RecipesCount):
 @admin.register(Subscription)
 class SubscribtionAdmin(admin.ModelAdmin):
     list_display = (
+        'id',
         'user',
         'author',
     )
@@ -111,6 +112,7 @@ class IngredientsInRecipesInline(admin.TabularInline):
 @admin.register(Ingredients)
 class IngredientsAdmin(admin.ModelAdmin, RecipesCount):
     list_display = (
+        'id',
         'name',
         'measurement_unit',
         'get_recipes_count',
@@ -182,7 +184,7 @@ class RecipesAdmin(admin.ModelAdmin):
 
 @admin.register(IngredientsInRecipes)
 class IngredientsInRecipesAdmin(admin.ModelAdmin):
-    list_display = ('recipe', 'ingredient', 'amount')
+    list_display = ('id', 'recipe', 'ingredient', 'amount')
     list_filter = ('recipe', 'ingredient')
     search_fields = ('recipe__name', 'ingredient__name')
     autocomplete_fields = ['recipe', 'ingredient']
@@ -190,33 +192,16 @@ class IngredientsInRecipesAdmin(admin.ModelAdmin):
 
 @admin.register(Tags)
 class TagsAdmin(admin.ModelAdmin, RecipesCount):
-    list_display = ('name', 'slug', 'get_recipes_count')
+    list_display = ('id', 'name', 'slug', 'get_recipes_count')
     readonly_fields = ('get_recipes_count',)
     search_fields = ('name', 'slug')
     prepopulated_fields = {'slug': ('name',)}
 
 
-@admin.register(ShoppingCart)
-class ShoppingCartAdmin(admin.ModelAdmin):
+@admin.register(Favorites, ShoppingCart)
+class FavoritesShoppingAdmin(admin.ModelAdmin):
     list_display = (
         'id',
         'user',
-        'get_user_cart_count',
+        'recipe',
     )
-
-    @admin.display(description='в корзине')
-    def get_user_cart_count(self, obj):
-        return obj.user.shopping_carts.count()
-
-
-@admin.register(Favorites)
-class FavoritesAdmin(admin.ModelAdmin):
-    list_display = (
-        'id',
-        'user',
-        'get_favorites_count'
-    )
-
-    @admin.display(description='в избранном')
-    def get_favorites_count(self, obj):
-        return obj.user.favorites.count()
