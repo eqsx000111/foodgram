@@ -8,5 +8,5 @@
 
 Рецепты:
 {% for recipe in recipes %}
-    {{forloop.counter}}. {{ recipe.name }} ({{ recipe.author.username }})
+    {{forloop.counter}}. {{ recipe.name }} {{ recipe.author.username }}
 {% endfor %}
